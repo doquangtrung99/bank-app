@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import * as cookieParser from 'cookie-parser';
 import * as compression from 'compression';
+import * as bodyParser from 'body-parser';
 import helmet from 'helmet';
 
 async function bootstrap() {
@@ -12,6 +13,7 @@ async function bootstrap() {
     origin: 'http://localhost:5173',
     credentials: true,
   });
+  app.use(bodyParser.json({ limit: '50mb' }));
   app.use(helmet());
   app.use(compression());
   app.use(cookieParser());

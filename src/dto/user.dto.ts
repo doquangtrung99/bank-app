@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsStrongPassword, Matches } from "class-validator"
+import { IsEmail, IsNotEmpty, IsStrongPassword } from "class-validator"
 
 export class RegisterUserDto {
     @IsNotEmpty()
@@ -12,7 +12,10 @@ export class RegisterUserDto {
     email: string;
 
     @IsNotEmpty()
-    identification: number;
+    identificationType: string;
+
+    @IsNotEmpty()
+    identificationNumber: number;
 
     @IsNotEmpty()
     mobileNumber: string;

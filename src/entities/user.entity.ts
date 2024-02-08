@@ -10,7 +10,10 @@ export class UserSchema {
     name: string;
 
     @Column()
-    identification: number;
+    identificationType: string;
+
+    @Column()
+    identificationNumber: number;
 
     @Column({ unique: true })
     email: string;
@@ -24,7 +27,7 @@ export class UserSchema {
     @Column()
     country: string;
 
-    @Column()
+    @Column({ type: 'longblob' })
     proofOfIdentity: string;
 
     @OneToOne(() => CurrentAccountSchema, (currentAccount) => currentAccount.user)
