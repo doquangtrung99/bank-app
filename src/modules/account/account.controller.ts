@@ -28,7 +28,7 @@ export class AccountController {
         return ResponseAPI.success(res, response, HttpStatus.OK);
     }
 
-    @Get(':typeAccount')
+    @Get(':typeAccount/:userId')
     async getAllAccounts(
         @Param('typeAccount') typeAccount: string,
         @Res() res,

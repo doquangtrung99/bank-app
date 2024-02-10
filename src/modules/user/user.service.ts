@@ -22,7 +22,6 @@ export class UserService {
     }
 
     async getUserByUserId(userId: string, currentUser?): Promise<UserSchema> {
-
         // only myself can get the data of myself
         if (currentUser && currentUser.id !== userId) {
             throw new UnauthorizedException();

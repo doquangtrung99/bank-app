@@ -1,9 +1,10 @@
 
-import { Entity, Column, PrimaryGeneratedColumn, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, JoinColumn, OneToOne, Index } from 'typeorm';
 import { UserSchema } from './user.entity';
 import { ACCOUNT_TYPE } from '../constants';
 
 @Entity('current_account')
+@Index('idx_accountNumber', ['accountNumber'], { unique: true })
 export class CurrentAccountSchema {
 
     @PrimaryGeneratedColumn('uuid')
@@ -32,6 +33,7 @@ export class CurrentAccountSchema {
 
 
 @Entity('savings_account')
+@Index('idx_accountNumber', ['accountNumber'], { unique: true })
 export class SavingsAccountSchema {
     @PrimaryGeneratedColumn('uuid')
     id: string;

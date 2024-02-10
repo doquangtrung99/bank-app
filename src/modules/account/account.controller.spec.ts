@@ -270,7 +270,7 @@ describe('AccountController', () => {
                 },
                 receiver: {
                     type: 'CURRENT',
-                    accountId: requestMock.user.currentAccounts.id,
+                    accountNumber: 2675115681,
                 },
                 amountMoney: 500
             };
@@ -298,7 +298,7 @@ describe('AccountController', () => {
                 },
                 receiver: {
                     type: 'CURRENT',
-                    accountId: 'other-account-id',
+                    accountNumber: 2675115681,
                 },
                 amountMoney: 500
             };

@@ -148,11 +148,16 @@ export class AuthService {
             }
         })
 
+        const user = await this.userService.getUserByUserId(decoded.userId);
+        if (!user) {
+            throw new NotFoundException();
+        }
         if (!foundCurrentTokenPair) {
             throw new ForbiddenException();
         }
 
-        return decoded
+        delete user.password
+        return user
     }
 
     async register(userBody: RegisterUserDto): Promise<UserSchema> {

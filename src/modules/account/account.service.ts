@@ -24,7 +24,6 @@ export class AccountService {
     async getAccountBy({ type, options }) {
         const response = await this.currentType[type].findOne({
             where: {
-                type,
                 ...options
             }
         })
@@ -35,7 +34,7 @@ export class AccountService {
     async getSingleAccount({ type, options }, user) {
 
         const res = await this.getAccountBy({ type, options });
-        if (res.userId !== user.id) {
+        if (res?.userId !== user.id) {
             throw new UnauthorizedException();
         }
         return res;
@@ -164,7 +163,7 @@ export class AccountService {
         }
 
         if (foundAccount.balance < amountMoney) {
-            throw new Error('Insufficient funds')
+            throw new HttpException('Insufficient funds', HttpStatus.BAD_REQUEST)
         }
 
         const updatedBalance = foundAccount.balance - amountMoney;
@@ -191,17 +190,16 @@ export class AccountService {
         try {
             const {
                 sender: { accountId: senderId, type: savingsType },
-                receiver: { accountId: receiverId, type: currentType },
+                receiver: { accountNumber: receiverAccountNumber, type: currentType },
                 amountMoney
             } = data;
 
-            if (user.savingsAccounts.id === senderId) {
+            const senderAccount = await this.getAccountBy({ type: savingsType, options: { id: senderId, userId: user.id } });
+            const receiverAccount = await this.getAccountBy({ type: currentType, options: { accountNumber: receiverAccountNumber } });
+
+            if (user?.savingsAccounts?.id === receiverAccount?.id) {
                 throw new HttpException('You do not have permission to transfer from this account', HttpStatus.FORBIDDEN);
             }
-
-            const senderAccount = await this.getAccountBy({ type: savingsType, options: { id: senderId, userId: user.id } });
-            const receiverAccount = await this.getAccountBy({ type: currentType, options: { id: receiverId } });
-
             if (!receiverAccount || !senderAccount) {
                 throw new NotFoundException();
             }
@@ -218,7 +216,7 @@ export class AccountService {
                 balance: updatedSenderBalance
             });
 
-            const updatedReceiverAccount = await queryRunner.manager.update(CurrentAccountSchema, receiverId, {
+            const updatedReceiverAccount = await queryRunner.manager.update(CurrentAccountSchema, receiverAccount.id, {
                 balance: updatedReceiverBalance
             });
 

@@ -35,7 +35,8 @@ describe('AccountService', () => {
         name: "trung",
         email: "quangtrung@gmail.com",
         password: "test123",
-        identification: 123,
+        identificationType: '',
+        identificationNumber: 123,
         mobileNumber: "0974078473",
         country: "Viet Nam",
         proofOfIdentity: "identityImages.png",
@@ -105,7 +106,7 @@ describe('AccountService', () => {
 
             jest.spyOn(currentAccountRepository, 'findOne').mockResolvedValue(mockAccountFound);
             const res = await accountService.getAccountBy({ type: currentType, options });
-            expect(currentAccountRepository.findOne).toHaveBeenCalledWith({ where: { type: currentType, ...options } });
+            expect(currentAccountRepository.findOne).toHaveBeenCalledWith({ where: { ...options } });
             expect(res).toEqual(response);
         })
 
@@ -142,7 +143,7 @@ describe('AccountService', () => {
             jest.spyOn(currentAccountRepository, 'findOne').mockResolvedValue(null);
             jest.spyOn(currentAccountRepository, 'save').mockResolvedValue(response);
             expect(await accountService.createAccount(requestCreate, mockCurrentUser)).toEqual(response);
-            expect(currentAccountRepository.findOne).toHaveBeenCalledWith({ where: { type: currentType, ...options } });
+            expect(currentAccountRepository.findOne).toHaveBeenCalledWith({ where: { ...options } });
         })
 
         it('should have only one account with type "CURRENT" ', async () => {
@@ -181,7 +182,7 @@ describe('AccountService', () => {
             jest.spyOn(savingsAccountRepository, 'findOne').mockResolvedValue(null);
             jest.spyOn(savingsAccountRepository, 'save').mockResolvedValue(response);
             expect(await accountService.createAccount(requestCreate, mockCurrentUser)).toEqual(response);
-            expect(savingsAccountRepository.findOne).toHaveBeenCalledWith({ where: { type: savingsType, ...options } });
+            expect(savingsAccountRepository.findOne).toHaveBeenCalledWith({ where: { ...options } });
         })
 
         it('should have only one account with type "SAVINGS" ', async () => {
@@ -354,7 +355,7 @@ describe('AccountService', () => {
 
             const data: TransferDto = {
                 sender: { accountId: 'senderId', type: 'SAVINGS' },
-                receiver: { accountId: 'receiverId', type: 'CURRENT' },
+                receiver: { accountNumber: 123, type: 'CURRENT' },
                 amountMoney: 100,
             };
 
@@ -365,14 +366,14 @@ describe('AccountService', () => {
             jest.spyOn(accountService, 'getAccountBy').mockImplementation(({ options }) => {
                 if (options.id === 'senderId') {
                     return Promise.resolve(senderAccount);
-                } else if (options.id === 'receiverId') {
+                } else if (options.accountNumber === 123) {
                     return Promise.resolve(receiverAccount);
                 }
             });
             await accountService.transfer(data, mockCurrentUser);
 
             expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'SAVINGS', options: { id: 'senderId', userId: mockCurrentUser.id } });
-            expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'CURRENT', options: { id: 'receiverId' } });
+            expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'CURRENT', options: { accountNumber: 123 } });
             expect(mockQueryRunner.connect).toHaveBeenCalledTimes(1);
             expect(mockQueryRunner.startTransaction).toHaveBeenCalledTimes(1);
             expect(mockQueryRunner.manager.update).toHaveBeenCalledTimes(2);
@@ -395,25 +396,25 @@ describe('AccountService', () => {
 
             const data: TransferDto = {
                 sender: { accountId: 'senderId', type: 'SAVINGS' },
-                receiver: { accountId: 'senderId', type: 'CURRENT' },
+                receiver: { accountNumber: 123, type: 'CURRENT' },
                 amountMoney: 100,
             };
 
             const senderAccount = { balance: 500 };
-            const receiverAccount = { balance: 100 };
+            const receiverAccount = { id: 'senderId', accountNumber: 123, balance: 100 };
 
             jest.spyOn(dataSourceMock, 'createQueryRunner').mockReturnValue(mockQueryRunner);
             jest.spyOn(accountService, 'getAccountBy').mockImplementation(({ options }) => {
                 if (options.id === 'senderId') {
                     return Promise.resolve(senderAccount);
-                } else if (options.id === 'receiverId') {
+                } else if (options.accountNumber === 123) {
                     return Promise.resolve(receiverAccount);
                 }
             });
             await accountService.transfer(data, mockCurrentUser);
 
             expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'SAVINGS', options: { id: 'senderId', userId: mockCurrentUser.id } });
-            expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'CURRENT', options: { id: 'senderId' } });
+            expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'CURRENT', options: { accountNumber: 123 } });
             expect(mockQueryRunner.connect).toHaveBeenCalledTimes(1);
             expect(mockQueryRunner.startTransaction).toHaveBeenCalledTimes(1);
             expect(mockQueryRunner.manager.update).toHaveBeenCalledTimes(2);
@@ -436,7 +437,7 @@ describe('AccountService', () => {
 
             const data: TransferDto = {
                 sender: { accountId: 'senderId', type: 'SAVINGS' },
-                receiver: { accountId: 'receiverId', type: 'CURRENT' },
+                receiver: { accountNumber: 123, type: 'CURRENT' },
                 amountMoney: 200,
             };
 
@@ -447,14 +448,14 @@ describe('AccountService', () => {
             jest.spyOn(accountService, 'getAccountBy').mockImplementation(({ options }) => {
                 if (options.id === 'senderId') {
                     return Promise.resolve(senderAccount);
-                } else if (options.id === 'receiverId') {
+                } else if (options.accountNumber === 123) {
                     return Promise.resolve(receiverAccount);
                 }
             });
 
             await expect(accountService.transfer(data, mockCurrentUser)).rejects.toThrow(new HttpException('Insufficient funds', HttpStatus.BAD_REQUEST));
             expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'SAVINGS', options: { id: 'senderId', userId: mockCurrentUser.id } });
-            expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'CURRENT', options: { id: 'receiverId' } });
+            expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'CURRENT', options: { accountNumber: 123 } });
             expect(mockQueryRunner.connect).toHaveBeenCalledTimes(1);
             expect(mockQueryRunner.startTransaction).toHaveBeenCalledTimes(1);
             expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);
@@ -476,24 +477,24 @@ describe('AccountService', () => {
 
             const data: TransferDto = {
                 sender: { accountId: 'senderId', type: 'SAVINGS' },
-                receiver: { accountId: 'senderId', type: 'CURRENT' },
+                receiver: { accountNumber: 123, type: 'CURRENT' },
                 amountMoney: 200,
             };
 
-            const receiverAccount = { balance: 100 };
+            const receiverAccount = { id: 'receiverId', balance: 100 };
 
             jest.spyOn(dataSourceMock, 'createQueryRunner').mockReturnValue(mockQueryRunner);
             jest.spyOn(accountService, 'getAccountBy').mockImplementation(({ options }) => {
                 if (options.id === 'senderId') {
                     return Promise.resolve(null);
-                } else if (options.id === 'receiverId') {
+                } else if (options.accountNumber === 123) {
                     return Promise.resolve(receiverAccount);
                 }
             });
 
             await expect(accountService.transfer(data, mockCurrentUser)).rejects.toThrow(new NotFoundException());
             expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'SAVINGS', options: { id: 'senderId', userId: mockCurrentUser.id } });
-            expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'CURRENT', options: { id: 'senderId' } });
+            expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'CURRENT', options: { accountNumber: 123 } });
             expect(mockQueryRunner.connect).toHaveBeenCalledTimes(1);
             expect(mockQueryRunner.startTransaction).toHaveBeenCalledTimes(1);
             expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);
@@ -515,7 +516,7 @@ describe('AccountService', () => {
 
             const data: TransferDto = {
                 sender: { accountId: 'senderId', type: 'SAVINGS' },
-                receiver: { accountId: 'receiverId', type: 'CURRENT' },
+                receiver: { accountNumber: 123, type: 'CURRENT' },
                 amountMoney: 200,
             };
             const senderAccount = { balance: 500 };
@@ -524,14 +525,14 @@ describe('AccountService', () => {
             jest.spyOn(accountService, 'getAccountBy').mockImplementation(({ options }) => {
                 if (options.id === 'senderId') {
                     return Promise.resolve(senderAccount);
-                } else if (options.id === 'receiverId') {
+                } else if (options.accountNumber === 123) {
                     return Promise.resolve(null);
                 }
             });
 
             await expect(accountService.transfer(data, mockCurrentUser)).rejects.toThrow(new NotFoundException());
             expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'SAVINGS', options: { id: 'senderId', userId: mockCurrentUser.id } });
-            expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'CURRENT', options: { id: 'receiverId' } });
+            expect(accountService.getAccountBy).toHaveBeenCalledWith({ type: 'CURRENT', options: { accountNumber: 123 } });
             expect(mockQueryRunner.connect).toHaveBeenCalledTimes(1);
             expect(mockQueryRunner.startTransaction).toHaveBeenCalledTimes(1);
             expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);

@@ -23,7 +23,7 @@ class SenderDto {
 
 class ReceiverDto {
     @IsNotEmpty()
-    accountId: string;
+    accountNumber: number;
 
     @IsNotEmpty()
     @IsIn(['CURRENT'])

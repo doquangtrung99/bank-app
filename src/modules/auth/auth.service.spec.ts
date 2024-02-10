@@ -12,6 +12,8 @@ import { UserService } from '../user/user.service';
 import { Repository } from 'typeorm';
 import { JwtAuthService } from '../jwt/jwt.service';
 import { JwtService } from '@nestjs/jwt';
+import { CurrentTokenPair } from '../../entities/currentTokenPair.entity';
+import { UsedRefreshTokens } from '../../entities/usedRefreshTokens.entity';
 
 describe('AuthService', () => {
     let authService: AuthService;
@@ -27,6 +29,22 @@ describe('AuthService', () => {
                 JwtService,
                 {
                     provide: getRepositoryToken(UserSchema),
+                    useValue: {
+                        findOne: jest.fn(),
+                        save: jest.fn(),
+                        create: jest.fn(),
+                    },
+                },
+                {
+                    provide: getRepositoryToken(CurrentTokenPair),
+                    useValue: {
+                        findOne: jest.fn(),
+                        save: jest.fn(),
+                        create: jest.fn(),
+                    },
+                },
+                {
+                    provide: getRepositoryToken(UsedRefreshTokens),
                     useValue: {
                         findOne: jest.fn(),
                         save: jest.fn(),

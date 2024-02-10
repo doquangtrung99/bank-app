@@ -11,6 +11,8 @@ import { AuthService } from './auth.service';
 import { UserController } from '../user/user.controller';
 import { UserService } from '../user/user.service';
 import { Repository } from 'typeorm';
+import { CurrentTokenPair } from '../../entities/currentTokenPair.entity';
+import { UsedRefreshTokens } from '../../entities/usedRefreshTokens.entity';
 
 describe('AuthController', () => {
 
@@ -35,7 +37,8 @@ describe('AuthController', () => {
             name: "trung",
             email: "quangtrung@gmail.com",
             password: "test123",
-            identification: 123,
+            identificationNumber: 123,
+            identificationType: 'citizenId',
             mobileNumber: "0974078473",
             country: "Viet Nam",
             proofOfIdentity: "identityImages.png",
@@ -55,7 +58,8 @@ describe('AuthController', () => {
         name: "trung",
         email: "quangtrung@gmail.com",
         password: "test123",
-        identification: 123,
+        identificationNumber: 123,
+        identificationType: 'citizenId',
         mobileNumber: "0974078473",
         country: "Viet Nam",
         proofOfIdentity: "identityImages.png",
@@ -79,6 +83,22 @@ describe('AuthController', () => {
                         save: jest.fn(),
                         create: jest.fn(),
                     },
+                },
+                {
+                    provide: getRepositoryToken(CurrentTokenPair),
+                    useValue: {
+                        findOne: jest.fn(),
+                        save: jest.fn(),
+                        create: jest.fn(),
+                    },
+                },
+                {
+                    provide: getRepositoryToken(UsedRefreshTokens),
+                    useValue: {
+                        findOne: jest.fn(),
+                        save: jest.fn(),
+                        create: jest.fn(),
+                    },
                 }
             ],
         }).compile();
@@ -92,7 +112,8 @@ describe('AuthController', () => {
             name: "trung",
             email: "quangtrung@gmail.com",
             password: "test123",
-            identification: 123,
+            identificationNumber: 123,
+            identificationType: 'citizenId',
             mobileNumber: "0974078473",
             country: "Viet Nam",
             proofOfIdentity: "identityImages.png",
@@ -103,7 +124,8 @@ describe('AuthController', () => {
             name: "trung",
             email: "quangtrung@gmail.com",
             password: "test123",
-            identification: 123,
+            identificationNumber: 123,
+            identificationType: 'citizenId',
             mobileNumber: "0974078473",
             country: "Viet Nam",
             proofOfIdentity: "identityImages.png",
