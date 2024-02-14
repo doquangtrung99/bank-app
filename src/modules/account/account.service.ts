@@ -4,7 +4,7 @@ import { CreateAccountDto, TransactionDto, TransferDto } from '../../dto/account
 import { CurrentAccountSchema, SavingsAccountSchema } from '../../entities/account.entity';
 import { UserSchema } from '../../entities/user.entity';
 import { generateUniqueNumberWithTenDigits } from '../../utils';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AccountService {
@@ -13,7 +13,6 @@ export class AccountService {
         private readonly accountRepository: Repository<CurrentAccountSchema>,
         @InjectRepository(SavingsAccountSchema)
         private readonly savingsRepository: Repository<SavingsAccountSchema>,
-        private dataSource: DataSource
     ) { }
 
     currentType = {
@@ -120,116 +119,4 @@ export class AccountService {
         return response
     }
 
-    async deposite(data: TransactionDto, user): Promise<any> {
-        const { type, accountId, amountMoney } = data
-        const foundAccount = await this.getAccountBy({
-            type,
-            options: {
-                id: accountId,
-                userId: user.id
-            }
-        })
-
-        if (!foundAccount) {
-            throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
-        }
-
-        const AccountSchema = this.currentType[type];
-
-        const updatedBalance = foundAccount.balance + amountMoney;
-        const updatedResult = await this.accountQuery(
-            AccountSchema,
-            accountId,
-            { balance: updatedBalance }
-        )
-
-        if (updatedResult.affected === 0) {
-            throw new NotFoundException(`Entity with ID ${accountId} not found`);
-        }
-
-        const updatedRecord = await this.getAccountById(AccountSchema, accountId);
-
-        return updatedRecord
-    }
-
-    async withdraw(data: TransactionDto, user: UserSchema) {
-        const { type, accountId, amountMoney } = data
-        const foundAccount = await this.getAccountBy({ type, options: { id: accountId, userId: user.id } })
-
-        const AccountSchema = this.currentType[type];
-
-        if (!foundAccount) {
-            throw new UnauthorizedException('You do not have permission to withdraw from this account')
-        }
-
-        if (foundAccount.balance < amountMoney) {
-            throw new HttpException('Insufficient funds', HttpStatus.BAD_REQUEST)
-        }
-
-        const updatedBalance = foundAccount.balance - amountMoney;
-        const updatedResult = await this.accountQuery(
-            AccountSchema,
-            accountId,
-            { balance: updatedBalance }
-        )
-
-        if (updatedResult.affected === 0) {
-            throw new NotFoundException(`Entity with ID ${accountId} not found`);
-        }
-
-        const updatedRecord = await this.getAccountById(AccountSchema, accountId);
-
-        return updatedRecord
-    }
-
-    async transfer(data: TransferDto, user: UserSchema) {
-        const queryRunner = this.dataSource.createQueryRunner();
-        await queryRunner.connect();
-        await queryRunner.startTransaction();
-
-        try {
-            const {
-                sender: { accountId: senderId, type: savingsType },
-                receiver: { accountNumber: receiverAccountNumber, type: currentType },
-                amountMoney
-            } = data;
-
-            const senderAccount = await this.getAccountBy({ type: savingsType, options: { id: senderId, userId: user.id } });
-            const receiverAccount = await this.getAccountBy({ type: currentType, options: { accountNumber: receiverAccountNumber } });
-
-            if (user?.savingsAccounts?.id === receiverAccount?.id) {
-                throw new HttpException('You do not have permission to transfer from this account', HttpStatus.FORBIDDEN);
-            }
-            if (!receiverAccount || !senderAccount) {
-                throw new NotFoundException();
-            }
-
-            if (senderAccount.balance < amountMoney) {
-                throw new HttpException('Insufficient funds', HttpStatus.BAD_REQUEST);
-            }
-
-            const currentReceiverBalance = receiverAccount.balance;
-            const updatedSenderBalance = senderAccount.balance - amountMoney;
-            const updatedReceiverBalance = currentReceiverBalance + amountMoney;
-
-            const updatedSenderAccount = await queryRunner.manager.update(SavingsAccountSchema, senderId, {
-                balance: updatedSenderBalance
-            });
-
-            const updatedReceiverAccount = await queryRunner.manager.update(CurrentAccountSchema, receiverAccount.id, {
-                balance: updatedReceiverBalance
-            });
-
-            if (updatedSenderAccount.affected === 0 || updatedReceiverAccount.affected === 0) {
-                throw new NotFoundException();
-            }
-
-            await queryRunner.commitTransaction();
-        } catch (err) {
-            await queryRunner.rollbackTransaction();
-            throw new HttpException(err.message, err.status);
-        } finally {
-            await queryRunner.release();
-        }
-    }
 }

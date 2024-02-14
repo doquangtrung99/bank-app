@@ -2,7 +2,6 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtAuthService } from './jwt.service';
-import { jwtConstants } from '../auth/constants';
 
 @Module({
     imports: [

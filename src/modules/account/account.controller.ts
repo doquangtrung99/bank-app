@@ -1,10 +1,13 @@
 import { Body, Controller, Get, HttpStatus, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { AuthGuard } from '../auth/auth.guard';
-import { CreateAccountDto, DepositDto, TransactionDto, TransferDto, WithdrawDto } from '../../dto/account.dto';
+import { CreateAccountDto, DepositDto, TransferDto, WithdrawDto } from '../../dto/account.dto';
 import { CurrentAccountSchema } from '../../entities/account.entity';
 import { ResponseAPI } from '../../utils/responseApi';
+import { Request, Response } from 'express';
+import { UserSchema } from 'src/entities/user.entity';
 
+export type ExtendRequest = Request & { user?: UserSchema }
 @UseGuards(AuthGuard)
 @Controller('api/v1/account')
 export class AccountController {
@@ -14,8 +17,8 @@ export class AccountController {
     async getAccount(
         @Param('typeAccount') typeAccount: string,
         @Param('accountId') accountId: string,
-        @Res() res,
-        @Req() req,
+        @Res() res: Response,
+        @Req() req: ExtendRequest,
     ): Promise<ResponseAPI<CurrentAccountSchema>> {
         this.accountService.validateAccountType(typeAccount);
         const response = await this.accountService.getSingleAccount({
@@ -31,10 +34,10 @@ export class AccountController {
     @Get(':typeAccount/:userId')
     async getAllAccounts(
         @Param('typeAccount') typeAccount: string,
-        @Res() res,
-        @Req() req
+        @Res() res: Response,
+        @Req() req: ExtendRequest
     ): Promise<ResponseAPI<CurrentAccountSchema>> {
-        const { userId } = req.user
+        const { id: userId } = req.user
         this.accountService.validateAccountType(typeAccount);
         const response = await this.accountService.getAllAccounts({
             typeAccount,
@@ -43,26 +46,12 @@ export class AccountController {
         return ResponseAPI.success(res, response, HttpStatus.OK);
     }
     @Post('create')
-    async createAccount(@Req() req, @Res() res, @Body() accountData: CreateAccountDto): Promise<ResponseAPI<CurrentAccountSchema>> {
+    async createAccount(
+        @Req() req: ExtendRequest,
+        @Res() res: Response,
+        @Body() accountData: CreateAccountDto
+    ): Promise<ResponseAPI<CurrentAccountSchema>> {
         const response = await this.accountService.createAccount(accountData, req.user);
         return ResponseAPI.success(res, response, HttpStatus.OK);
-    }
-
-    @Post('deposite')
-    async deposite(@Req() req, @Res() res, @Body() data: DepositDto): Promise<ResponseAPI<CurrentAccountSchema>> {
-        const response = await this.accountService.deposite(data, req.user);
-        return ResponseAPI.success(res, response, HttpStatus.OK);
-    }
-
-    @Post('withdraw')
-    async withdraw(@Req() req, @Res() res, @Body() accountData: WithdrawDto): Promise<ResponseAPI<CurrentAccountSchema>> {
-        const response = await this.accountService.withdraw(accountData, req.user);
-        return ResponseAPI.success(res, response, HttpStatus.OK);
-    }
-
-    @Post('transfer')
-    async transfer(@Req() req, @Res() res, @Body() accountData: TransferDto): Promise<ResponseAPI<CurrentAccountSchema>> {
-        await this.accountService.transfer(accountData, req.user);
-        return ResponseAPI.success(res, "Transfer successfully", HttpStatus.OK);
     }
 }

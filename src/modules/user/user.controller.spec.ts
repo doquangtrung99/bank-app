@@ -8,6 +8,7 @@ import { UserSchema } from '../../entities//user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { JwtAuthService } from '../jwt/jwt.service';
+import { ExtendRequest } from '../account/account.controller';
 
 describe('UserController', () => {
 
@@ -84,7 +85,7 @@ describe('UserController', () => {
             const mockUserId = requestMock.params.userId;
 
             jest.spyOn(userService, 'getUserByUserId').mockResolvedValue(mockUser);
-            const result = await userController.getUser(mockUserId, responseMock, requestMock);
+            const result = await userController.getUser(mockUserId, responseMock, requestMock as ExtendRequest);
             expect(result).toEqual(await ResponseAPI.success(responseMock, mockUser, 200));
         });
 
@@ -92,7 +93,7 @@ describe('UserController', () => {
             try {
                 const mockUserId = 'nonExistentUserId';
                 jest.spyOn(userService, 'getUserByUserId').mockRejectedValue(new NotFoundException());
-                await userController.getUser(mockUserId, responseMock, requestMock);
+                await userController.getUser(mockUserId, responseMock, requestMock as ExtendRequest);
             } catch (error) {
                 expect(error.status).toBe(404);
             }

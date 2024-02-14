@@ -1,9 +1,11 @@
-import { Body, Controller, HttpStatus, Post, Res, Req } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, Res, Req, UseGuards } from '@nestjs/common';
 import { LoginUserDto, RegisterUserDto } from '../../dto/user.dto';
 import { UserSchema } from '../../entities/user.entity';
 import { ResponseAPI } from '../../utils/responseApi';
 import { AuthService } from './auth.service';
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { ExtendRequest } from '../account/account.controller';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -12,9 +14,11 @@ export class AuthController {
     ) { }
 
     @Post('login')
-    async login(@Body() userLoginInfor: LoginUserDto, @Res() res): Promise<ResponseAPI<UserSchema>> {
+    async login(
+        @Body() userLoginInfor: LoginUserDto,
+        @Res() res: Response
+    ): Promise<ResponseAPI<UserSchema>> {
         const response = await this.authService.login(userLoginInfor);
-
         if ('refreshToken' in response) {
             res.cookie('refreshToken', response.refreshToken, {
                 maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -27,7 +31,10 @@ export class AuthController {
     }
 
     @Post('validate')
-    async validate(@Req() req: Request, @Res() res: Response) {
+    async validate(
+        @Req() req: ExtendRequest,
+        @Res() res: Response
+    ) {
         const { token } = req.body;
         const refreshToken = req.cookies['refreshToken'];
         const response = await this.authService.validate(token, refreshToken);
@@ -35,13 +42,19 @@ export class AuthController {
     }
 
     @Post('register')
-    async register(@Body() registerUserData: RegisterUserDto, @Res() res): Promise<ResponseAPI<UserSchema>> {
+    async register(
+        @Body() registerUserData: RegisterUserDto,
+        @Res() res: Response
+    ): Promise<ResponseAPI<UserSchema>> {
         const response = await this.authService.register(registerUserData);
         return ResponseAPI.success(res, response, HttpStatus.OK);
     }
 
     @Post('refreshToken')
-    async refreshToken(@Req() req: Request, @Res() res: Response) {
+    async refreshToken(
+        @Req() req: ExtendRequest,
+        @Res() res: Response
+    ) {
         const authorizationHeader = req.headers.authorization;
         const userIdHeader = req.headers['x-client-id'];
 

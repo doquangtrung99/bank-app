@@ -10,9 +10,6 @@ import { AccountService } from './account.service';
 import { CurrentAccountSchema, SavingsAccountSchema } from '../../entities/account.entity';
 import { DataSource, Repository } from 'typeorm';
 import { UserService } from '../user/user.service';
-import { DepositDto, TransferDto, WithdrawDto } from '../../dto/account.dto';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
 import { JwtAuthService } from '../jwt/jwt.service';
 
 export const dataSourceMockFactory: () => MockType<DataSource> = jest.fn(() => ({
@@ -132,10 +129,11 @@ describe('AccountController', () => {
                 type: "CURRENT" as "CURRENT",
                 userId: requestMock.user.id
             }
+
             jest.spyOn(accountService, 'createAccount').mockResolvedValueOnce(response);
             jest.spyOn(ResponseAPI, 'success').mockImplementation();
 
-            await accountController.createAccount(requestCreate, responseMock, requestCreate);
+            await accountController.createAccount(requestMock, responseMock, requestCreate);
             expect(ResponseAPI.success).toHaveBeenCalledWith(
                 responseMock,
                 response,
@@ -160,7 +158,7 @@ describe('AccountController', () => {
             jest.spyOn(accountService, 'createAccount').mockResolvedValueOnce(response);
             jest.spyOn(ResponseAPI, 'success').mockImplementation();
 
-            await accountController.createAccount(requestCreate, responseMock, requestCreate);
+            await accountController.createAccount(requestMock, responseMock, requestCreate);
             expect(ResponseAPI.success).toHaveBeenCalledWith(
                 responseMock,
                 response,
@@ -169,153 +167,5 @@ describe('AccountController', () => {
 
         })
     })
-
-    describe('Deposite', () => {
-        const transactionDto: DepositDto = {
-            type: 'SAVINGS',
-            accountId: requestMock.user.currentAccounts.id,
-            amountMoney: 500,
-        };
-
-        const depositResponse = {
-            id: requestMock.user.currentAccounts.id,
-            userId: requestMock.user.id,
-            accountNumber: 2675115681,
-            type: savingsType,
-            balance: 5000
-        };
-
-        it('should successfully deposit to "SAVINGS" account type and return response', async () => {
-            jest
-                .spyOn(accountService, 'deposite')
-                .mockResolvedValueOnce(depositResponse);
-
-            jest.spyOn(ResponseAPI, 'success').mockImplementation();
-
-            await accountController.deposite({ user: requestMock.user }, responseMock, transactionDto);
-            expect(ResponseAPI.success).toHaveBeenCalledWith(
-                responseMock,
-                depositResponse,
-                HttpStatus.OK,
-            );
-        })
-
-        it('should deposit unsuccessfully with "CURRENT" account type', async () => {
-            const currentDepositDto = {
-                type: 'CURRENT',
-                accountId: requestMock.user.currentAccounts.id,
-                amountMoney: 500,
-            };
-
-            const depositDto = plainToInstance(DepositDto, currentDepositDto)
-            const errors = await validate(depositDto);
-            expect(errors.length).not.toBe(0);
-            expect(JSON.stringify(errors)).toContain(`type must be one of the following values: SAVINGS`);
-        });
-    })
-
-    describe('Withdraw', () => {
-        const transactionDto: WithdrawDto = {
-            type: 'CURRENT',
-            accountId: requestMock.user.currentAccounts.id,
-            amountMoney: 500,
-        };
-
-        const widthdrawResponse = {
-            id: requestMock.user.currentAccounts.id,
-            userId: requestMock.user.id,
-            accountNumber: 2675115681,
-            type: currentType,
-            balance: 5000
-        };
-
-        it('should successfully withdraw and return response', async () => {
-
-            jest.spyOn(accountService, 'withdraw').mockResolvedValueOnce(widthdrawResponse);
-            jest.spyOn(ResponseAPI, 'success').mockImplementation();
-
-            await accountController.withdraw({ user: requestMock.user }, responseMock, transactionDto);
-
-            expect(accountService.withdraw).toHaveBeenCalledWith(transactionDto, requestMock.user);
-            expect(ResponseAPI.success).toHaveBeenCalledWith(
-                responseMock,
-                widthdrawResponse,
-                HttpStatus.OK
-            );
-        })
-
-        it('should handle withdraw unsuccessfully with "SAVINGS" account type', async () => {
-            const currentWidthdrawDto = {
-                type: 'SAVINGS',
-                accountId: requestMock.user.currentAccounts.id,
-                amountMoney: 500,
-            };
-
-            const withdrawDto = plainToInstance(WithdrawDto, currentWidthdrawDto)
-            const errors = await validate(withdrawDto);
-            expect(errors.length).not.toBe(0);
-            expect(JSON.stringify(errors)).toContain(`type must be one of the following values: CURRENT`);
-        });
-
-    });
-
-    describe('Transfer', () => {
-
-        it('should successfully transfer within myself account : type account from "SAVINGS" to "CURRENT"', async () => {
-
-            const transferDto: TransferDto = {
-                sender: {
-                    type: 'SAVINGS',
-                    accountId: requestMock.user.currentAccounts.id,
-                },
-                receiver: {
-                    type: 'CURRENT',
-                    accountNumber: 2675115681,
-                },
-                amountMoney: 500
-            };
-
-            jest.spyOn(accountService, 'transfer').mockReturnValue(undefined);
-            jest.spyOn(ResponseAPI, 'success').mockImplementation();
-            const res = await accountController.transfer(requestMock.user, responseMock, transferDto);
-
-            expect(res).toBe(undefined);
-            expect(ResponseAPI.success).toHaveBeenCalledTimes(1)
-            expect(ResponseAPI.success).toHaveBeenCalledWith(
-                responseMock,
-                'Transfer successfully',
-                HttpStatus.OK
-            )
-
-        })
-
-        it('should successfully transfer from myself account to other account: type account from "SAVINGS" to "CURRENT"', async () => {
-
-            const transferDto: TransferDto = {
-                sender: {
-                    type: 'SAVINGS',
-                    accountId: requestMock.user.currentAccounts.id,
-                },
-                receiver: {
-                    type: 'CURRENT',
-                    accountNumber: 2675115681,
-                },
-                amountMoney: 500
-            };
-
-            jest.spyOn(accountService, 'transfer').mockReturnValue(undefined);
-            jest.spyOn(ResponseAPI, 'success').mockImplementation();
-            const res = await accountController.transfer(requestMock.user, responseMock, transferDto);
-
-            expect(res).toBe(undefined);
-            expect(ResponseAPI.success).toHaveBeenCalledTimes(1)
-            expect(ResponseAPI.success).toHaveBeenCalledWith(
-                responseMock,
-                'Transfer successfully',
-                HttpStatus.OK
-            )
-        })
-    })
-
 
 });

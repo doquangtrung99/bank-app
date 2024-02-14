@@ -3,8 +3,7 @@ import { UserSchema } from '../../entities/user.entity';
 import { UserService } from '../user/user.service';
 import { ResponseAPI } from '../../utils/responseApi';
 import { JwtAuthService } from '../jwt/jwt.service';
-import { jwtConstants } from './constants';
-import { RegisterUserDto } from '../../dto/user.dto';
+import { LoginUserDto, RegisterUserDto } from '../../dto/user.dto';
 import { Repository } from 'typeorm';
 import { CONSTANT } from '../../constants';
 import * as bcrypt from 'bcrypt';
@@ -26,8 +25,8 @@ export class AuthService {
     async generateTokenPairs(user: UserSchema) {
 
         const payload = { userId: user.id, username: user.name, email: user.email, role: 'user' };
-        const accessToken = await this.jwtAuthService.generateToken(payload, { expiresIn: '1h', secret: jwtConstants.ACCESS_TOKEN_SECRET })
-        const refreshToken = await this.jwtAuthService.generateToken(payload, { expiresIn: '7d', secret: jwtConstants.REFRESH_TOKEN_SECRET })
+        const accessToken = await this.jwtAuthService.generateToken(payload, { expiresIn: '1h', secret: process.env.ACCESS_TOKEN_SECRET })
+        const refreshToken = await this.jwtAuthService.generateToken(payload, { expiresIn: '1d', secret: process.env.REFRESH_TOKEN_SECRET })
         return {
             accessToken,
             refreshToken
@@ -35,7 +34,7 @@ export class AuthService {
 
     }
 
-    async login(userLoginInfor): Promise<ResponseAPI<UserSchema>> {
+    async login(userLoginInfor: LoginUserDto): Promise<ResponseAPI<UserSchema>> {
 
         const user = await this.userService.getUserByEmail(userLoginInfor.email);
         if (!user) {
@@ -68,20 +67,18 @@ export class AuthService {
         }
     }
 
-    async verifyTokenTryCatch(token, secret) {
+    async verifyTokenTryCatch(token: string, secret: string, refreshToken?: boolean) {
         try {
             return await this.jwtAuthService.verifyToken(token, secret);
         } catch (error) {
             if (error.message === 'jwt expired') {
-                throw new HttpException('Token is expired', HttpStatus.UNAUTHORIZED);
+                throw new HttpException(`${refreshToken ? 'Refresh Token is expired' : 'Token is expired'}`, HttpStatus.UNAUTHORIZED);
             } else {
                 throw new HttpException('Invalid access token', HttpStatus.BAD_REQUEST);
             }
         }
     }
     async refreshToken(userId: string, accessToken: string, refreshToken: string) {
-
-        await this.verifyTokenTryCatch(accessToken, jwtConstants.ACCESS_TOKEN_SECRET);
 
         const currentUser = await this.userService.getUserByUserId(userId);
 
@@ -101,7 +98,7 @@ export class AuthService {
             throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
         }
 
-        await this.verifyTokenTryCatch(refreshToken, jwtConstants.REFRESH_TOKEN_SECRET);
+        await this.verifyTokenTryCatch(refreshToken, process.env.REFRESH_TOKEN_SECRET, true);
 
         const foundRefreshTokenUsed = await this.refreshTokenUsed.find({
             where: {
@@ -138,7 +135,7 @@ export class AuthService {
             throw new ForbiddenException();
         }
 
-        const decoded = await this.verifyTokenTryCatch(token, jwtConstants.ACCESS_TOKEN_SECRET);
+        const decoded = await this.verifyTokenTryCatch(token, process.env.ACCESS_TOKEN_SECRET);
 
         const foundCurrentTokenPair = await this.currentTokenPairRepository.findOne({
             where: {
