@@ -115,7 +115,7 @@ describe('TransactionService', () => {
             jest.spyOn(accountService, 'getAccountBy').mockResolvedValueOnce(foundAccountBeforeUpdate);
             jest.spyOn(accountService, 'getAccountById').mockResolvedValueOnce(output);
 
-            const updatedRecord = await transactionService.deposite(data, mockCurrentUser);
+            const updatedRecord = await transactionService.deposit(data, mockCurrentUser);
 
             expect(accountQueryMock).toHaveBeenCalledWith(
                 expect.anything(),
@@ -134,7 +134,7 @@ describe('TransactionService', () => {
 
             jest.spyOn(accountService, 'getAccountBy').mockResolvedValueOnce(null);
 
-            await expect(transactionService.deposite(data, mockCurrentUser)).rejects.toThrow(
+            await expect(transactionService.deposit(data, mockCurrentUser)).rejects.toThrow(
                 new HttpException('Account not found', HttpStatus.NOT_FOUND),
             );
         });

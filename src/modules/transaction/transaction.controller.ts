@@ -13,13 +13,13 @@ export type ExtendRequest = Request & { user?: UserSchema }
 export class TransactionController {
     constructor(private readonly transactionService: TransactionService) { }
 
-    @Post('deposite')
-    async deposite(
+    @Post('deposit')
+    async deposit(
         @Req() req: ExtendRequest,
         @Res() res: Response,
         @Body() data: DepositDto
     ): Promise<ResponseAPI<CurrentAccountSchema>> {
-        const response = await this.transactionService.deposite(data, req.user);
+        const response = await this.transactionService.deposit(data, req.user);
         return ResponseAPI.success(res, response, HttpStatus.OK);
     }
 

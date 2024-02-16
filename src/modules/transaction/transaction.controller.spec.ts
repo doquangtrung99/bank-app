@@ -140,12 +140,12 @@ describe('TransactionController', () => {
 
         it('should successfully deposit to "SAVINGS" account type and return response', async () => {
             jest
-                .spyOn(transactionService, 'deposite')
+                .spyOn(transactionService, 'deposit')
                 .mockResolvedValueOnce(depositResponse);
 
             jest.spyOn(ResponseAPI, 'success').mockImplementation();
 
-            await transactionController.deposite(requestMock, responseMock, transactionDto);
+            await transactionController.deposit(requestMock, responseMock, transactionDto);
             expect(ResponseAPI.success).toHaveBeenCalledWith(
                 responseMock,
                 depositResponse,

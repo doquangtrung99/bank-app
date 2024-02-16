@@ -11,7 +11,7 @@ export class TransactionService {
         private accountService: AccountService,
         private dataSource: DataSource
     ) { }
-    async deposite(data: TransactionDto, user): Promise<any> {
+    async deposit(data: TransactionDto, user): Promise<any> {
         const { type, accountId, amountMoney } = data
         const foundAccount = await this.accountService.getAccountBy({
             type,
